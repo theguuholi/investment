@@ -1,0 +1,8 @@
+### Ligar carro
+POST http://localhost:8080/ligar
+Content-Type: application/json
+
+{
+  "montadora": "Honda",
+  "tipo": "TURBO"
+}
