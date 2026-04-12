@@ -249,5 +249,52 @@ Application Context
 | `@Autowired` | Spring resolves by type — one `Motor` bean = unambiguous injection |
 | `@Bean(name=)` | Override default bean name (default = method name) |
 | `@Qualifier` | Required when multiple beans of the same type exist |
+| Custom qualifier | Preferred over `@Qualifier` string — type-safe and refactor-friendly |
 | Domain objects | Keep them free of Spring annotations |
 | Constructor injection | Preferred over field injection — easier to test |
+
+---
+
+## Custom Qualifier Annotations
+
+`@Qualifier("motorAspirado")` works but has a problem: the string can be mistyped and the compiler won't catch it.
+
+The solution is a **custom qualifier annotation**:
+
+```java
+@Retention(RetentionPolicy.RUNTIME)  // Spring reads it at runtime
+@Target({ElementType.FIELD,          // can be placed on fields
+         ElementType.PARAMETER,      // on method parameters
+         ElementType.METHOD})        // on @Bean methods
+public @interface Aspirado {}
+```
+
+Apply it on both sides — the `@Bean` definition and the injection point:
+
+```java
+// MontadoraConfiguration.java
+@Bean
+@Aspirado
+public Motor motorAspirado() {
+    return new Motor("2.0 Aspirado", 150, 4, 2.0, TipoMotor.ASPIRADO);
+}
+```
+
+```java
+// FactoryController.java
+@Autowired
+@Aspirado               // Spring matches this to the @Bean also annotated with @Aspirado
+private Motor motor;
+```
+
+Spring sees `@Aspirado` on the field and finds the `@Bean` also marked `@Aspirado` — no strings involved.
+
+### `@Qualifier` vs custom annotation
+
+| | `@Qualifier("motorAspirado")` | `@Aspirado` |
+|---|---|---|
+| Typo risk | Yes — string can be wrong | No — compile-time safe |
+| Refactor support | Manual string search | IDE renames everywhere |
+| Readability | Generic | Domain-specific |
+
+**Custom qualifiers are the preferred approach** for production code whenever you have multiple beans of the same type.
