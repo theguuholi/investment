@@ -89,30 +89,72 @@ The returned object lives in the **Application Context** as a singleton — one 
 
 ---
 
-## Step 3 — Dependency Injection with `@Autowired`
+## Step 3 — Bean Names and `@Qualifier`
 
-Now any class can receive the `Motor` without creating it:
+When you have **multiple beans of the same type**, Spring doesn't know which one to inject. This is exactly our case — three different motors:
 
 ```java
-@RestController("factory")
+@Configuration
+public class MontadoraConfiguration {
+
+    @Bean
+    public Motor motorEletrico() {                          // bean name = "motorEletrico"
+        return new Motor("1.5 Turbo", 173, 4, 1.5, TipoMotor.TURBO);
+    }
+
+    @Bean(name = "motorHibrido")                           // explicit custom name
+    public Motor motorHibrido() {
+        return new Motor("2.0 Híbrido", 200, 4, 2.0, TipoMotor.HIBRIDO);
+    }
+
+    @Bean(name = "motorAspirado")                          // explicit custom name
+    public Motor motorAspirado() {
+        return new Motor("2.0 Aspirado", 150, 4, 2.0, TipoMotor.ASPIRADO);
+    }
+}
+```
+
+**Bean name rules:**
+- By default, the bean name = the method name (`motorEletrico`)
+- You can override it with `@Bean(name = "customName")`
+
+If you try to inject `Motor` without specifying which one, Spring throws `NoUniqueBeanDefinitionException`.
+
+---
+
+## Step 4 — Dependency Injection with `@Autowired` + `@Qualifier`
+
+Use `@Qualifier` to tell Spring exactly which bean to inject:
+
+```java
+@RestController
 public class FactoryController {
 
     @Autowired
-    private Motor motor; // Spring finds the Motor bean and injects it here
+    @Qualifier("motorHibrido") // picks the bean named "motorHibrido"
+    private Motor motor;
 
     @PostMapping("/ligar")
     public CarroStatus ligar(@RequestBody Chave chave) {
-        var carro = new Carro(motor);
+        var carro = new HondaHRV(motor);
         return carro.darIgnicao(chave);
     }
 }
 ```
 
-Spring looks into the Application Context, finds the `Motor` bean registered by `MontadoraConfiguration`, and injects it automatically.
+Without `@Qualifier`, Spring resolves by type — fine when there's one bean. With multiple beans of the same type, `@Qualifier` is required.
+
+| Scenario | Result |
+|---|---|
+| 1 bean of type `Motor` | `@Autowired` alone works |
+| 2+ beans of type `Motor`, no `@Qualifier` | `NoUniqueBeanDefinitionException` |
+| 2+ beans of type `Motor` + `@Qualifier("name")` | Spring injects the named bean |
+
+Spring looks into the Application Context, finds the `motorHibrido` bean registered by `MontadoraConfiguration`, and injects it into `FactoryController`.
 
 ---
 
-## Step 4 — Using the injected bean
+## Step 5 — Using the injected bean
 
 `Carro` receives the `Motor` via its constructor (the only required field):
 
@@ -152,7 +194,7 @@ public class HondaHRV extends Carro {
 
 ---
 
-## Step 5 — The API
+## Step 6 — The API
 
 ```java
 public record Chave(Montadora montadora, String tipo) {}
@@ -183,14 +225,16 @@ Response:
 
 ```
 @Configuration (MontadoraConfiguration)
-    └── @Bean motor() → registers Motor in Application Context
+    ├── @Bean motorEletrico()  → registered as "motorEletrico"
+    ├── @Bean motorHibrido()   → registered as "motorHibrido"
+    └── @Bean motorAspirado()  → registered as "motorAspirado"
 
 Application Context
-    └── holds Motor singleton
+    └── holds 3 Motor singletons by name
 
 @RestController (FactoryController)
-    └── @Autowired Motor → Spring injects the Motor bean
-        └── new Carro(motor) → Carro uses the injected Motor
+    └── @Autowired + @Qualifier("motorHibrido") → Spring injects motorHibrido
+        └── new HondaHRV(motor) → HondaHRV uses the injected Motor
             └── darIgnicao(chave) → returns CarroStatus
 ```
 
@@ -203,5 +247,7 @@ Application Context
 | `@Configuration` | One per logical group of beans |
 | `@Bean` | One instance created, shared everywhere (singleton by default) |
 | `@Autowired` | Spring resolves by type — one `Motor` bean = unambiguous injection |
+| `@Bean(name=)` | Override default bean name (default = method name) |
+| `@Qualifier` | Required when multiple beans of the same type exist |
 | Domain objects | Keep them free of Spring annotations |
 | Constructor injection | Preferred over field injection — easier to test |
