@@ -182,6 +182,11 @@
 				<executions>
 					<execution>
 						<goals><goal>prepare-agent</goal></goals>
+						<configuration>
+							<includes>
+								<include>com/github/theguuholi/**</include>
+							</includes>
+						</configuration>
 					</execution>
 					<execution>
 						<id>report</id>

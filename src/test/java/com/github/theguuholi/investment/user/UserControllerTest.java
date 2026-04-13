@@ -93,7 +93,7 @@ class UserControllerTest {
     @Test
     void createUser_withValidBody_returnsCreatedUser() throws Exception {
         // given
-        var request = new UserRequest("Carol White", "carol@example.com");
+        var request = new UserRequest("Carol White", "carol@example.com", "password123");
         var created = buildUser("Carol White", "carol@example.com");
         given(userService.create(any(User.class))).willReturn(created);
 
