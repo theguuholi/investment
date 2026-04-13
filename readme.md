@@ -1,25 +1,3 @@
-```mermaid
-graph TD
-      CS([Container Spring]) --> AC[Application Context]
-      CS --> Comp[Components]
-      CS --> Config[Configurations]
-
-      Config --> Beans[Beans]
-      Config --> AppYml[application.yml / properties]
-
-      Comp --> Services[Services]
-      Comp --> Repositories[Repositories]
-      Comp --> Controllers[Controllers]
-
-      Services --> LN[Lógica Negócio]
-
-      Repositories --> SQL[SQL]
-      Repositories --> NoSQL[No SQL]
-
-      Controllers --> API[API Rest]
-      Controllers --> PW[Páginas Web]
-```
-
 ---
 
 # Spring Configuration, Beans & Dependency Injection
@@ -298,3 +276,63 @@ Spring sees `@Aspirado` on the field and finds the `@Bean` also marked `@Aspirad
 | Readability | Generic | Domain-specific |
 
 **Custom qualifiers are the preferred approach** for production code whenever you have multiple beans of the same type.
+
+---
+
+## Arquitetura Spring MVC
+
+```mermaid
+graph TD
+      CS([Container Spring]) --> AC[Application Context]
+      CS --> Comp[Components]
+      CS --> Config[Configurations]
+
+      Config --> Beans[Beans]
+      Config --> AppYml[application.yml / properties]
+
+      Comp --> Services[Services]
+      Comp --> Repositories[Repositories]
+      Comp --> Controllers[Controllers]
+
+      Services --> LN[Lógica Negócio]
+
+      Repositories --> SQL[SQL]
+      Repositories --> NoSQL[No SQL]
+
+      Controllers --> API[API Rest]
+      Controllers --> PW[Páginas Web]
+```
+
+O **Container Spring** é o núcleo da aplicação. Ele inicializa o **Application Context**, que gerencia dois pilares:
+
+- **Components** — os blocos funcionais da aplicação:
+  - `Services` → lógica de negócio
+  - `Repositories` → acesso a dados (SQL ou NoSQL)
+  - `Controllers` → entrada da aplicação (API Rest ou Páginas Web)
+
+- **Configurations** — o que configura o container:
+  - `Beans` → objetos gerenciados pelo Spring (`@Bean`, `@Component`)
+  - `application.yml / properties` → propriedades externas (porta, datasource, etc.)
+
+### Fluxo de uma Requisição
+
+```mermaid
+graph LR
+    Client([Cliente]) --> RC
+
+    RC[Rest Controller API] --> S[Service]
+    S --> RC
+
+    S --> OC[Outros Componentes]
+
+    S --> Repo[Repositorio]
+    Repo --> S
+
+    Repo -->|Acesso à camada de Persistencia| BD[(Banco de Dados)]
+    BD -->|Operação na Base de Dados| Repo
+```
+
+- **Rest Controller** — recebe a requisição HTTP e delega para o `Service`
+- **Service** — contém a lógica de negócio; orquestra repositórios e outros componentes
+- **Repositorio** — acessa a camada de persistência (JPA, JDBC, etc.)
+- **Banco de Dados** — executa a operação e retorna o resultado
