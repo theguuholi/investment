@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +23,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository repository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserService service;
@@ -76,6 +80,7 @@ class UserServiceTest {
         // given
         var user = buildUser(null, "Carol White", "carol@example.com");
         var savedUser = buildUser(UUID.randomUUID(), "Carol White", "carol@example.com");
+        given(passwordEncoder.encode(any())).willReturn("encoded-password");
         given(repository.save(any(User.class))).willReturn(savedUser);
 
         // when
@@ -106,6 +111,7 @@ class UserServiceTest {
         if (id != null) user.setId(id);
         user.setName(name);
         user.setEmail(email);
+        user.setPassword("raw-password");
         return user;
     }
 }

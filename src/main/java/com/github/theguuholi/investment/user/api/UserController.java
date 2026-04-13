@@ -33,6 +33,7 @@ public class UserController {
         var user = new User();
         user.setName(request.name());
         user.setEmail(request.email());
+        user.setPassword(request.password());
         return service.create(user);
     }
 
