@@ -1,0 +1,43 @@
+@baseUrl = http://localhost:8080
+@token = {{login.response.body.token}}
+
+### Login (run this first to get the token)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "secret123"
+}
+
+###
+
+### Create user
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Alice Smith",
+  "email": "alice@example.com",
+  "password": "secret123"
+}
+
+###
+
+### List all users
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+###
+
+### Get user by ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Delete user
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
