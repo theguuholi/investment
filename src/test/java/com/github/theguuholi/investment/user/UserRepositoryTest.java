@@ -93,6 +93,7 @@ class UserRepositoryTest {
         var user = new User();
         user.setName(name);
         user.setEmail(email);
+        user.setPassword("hashed-password");
         return user;
     }
 }

@@ -279,6 +279,167 @@ Spring sees `@Aspirado` on the field and finds the `@Bean` also marked `@Aspirad
 
 ---
 
+## Dependency Injection — How It Works
+
+**Dependency Injection (DI)** is a design pattern where an object receives its dependencies from the outside instead of creating them itself.
+
+### Without DI (tight coupling)
+
+```java
+public class CarService {
+    private MotorRepository motorRepository = new MotorRepository(); // creates its own dependency
+    private EmailService emailService = new EmailService();          // and another one
+}
+```
+
+Problems:
+- `CarService` controls the lifecycle of its dependencies
+- Impossible to swap implementations (e.g. for testing)
+- Constructor signature hides what the class actually needs
+
+### With DI (loose coupling)
+
+```java
+public class CarService {
+    private final MotorRepository motorRepository;
+    private final EmailService emailService;
+
+    public CarService(MotorRepository motorRepository, EmailService emailService) {
+        this.motorRepository = motorRepository;  // received, not created
+        this.emailService = emailService;
+    }
+}
+```
+
+Now `CarService` declares what it needs. The caller (or a DI container) decides what to provide.
+
+### How Spring does it
+
+Spring acts as the **DI container**: it creates all beans, resolves their dependencies, and wires everything together automatically.
+
+```java
+@Service
+public class CarService {
+    private final MotorRepository motorRepository;
+    private final EmailService emailService;
+
+    // Spring sees one constructor → injects automatically (no @Autowired needed)
+    public CarService(MotorRepository motorRepository, EmailService emailService) {
+        this.motorRepository = motorRepository;
+        this.emailService = emailService;
+    }
+}
+```
+
+Spring reads `@Service`, creates a `CarService` bean, looks up `MotorRepository` and `EmailService` beans in the Application Context, and passes them in. You never call `new CarService(...)` yourself.
+
+### Three injection styles
+
+| Style | Example | When to use |
+|---|---|---|
+| **Constructor injection** | `CarService(MotorRepository r)` | Preferred — immutable, testable |
+| **Field injection** | `@Autowired private MotorRepository r` | Convenient but hides deps, hard to test |
+| **Setter injection** | `@Autowired void setRepo(MotorRepository r)` | Optional dependencies only |
+
+Constructor injection is the recommended approach. Spring 4.3+ auto-injects when there is a single constructor.
+
+---
+
+## Bean Scopes
+
+Every bean in Spring has a **scope** that controls how many instances exist and for how long.
+
+> **Default scope for any bean is `singleton`.**
+
+You set a scope with `@Scope`:
+
+```java
+@Bean
+@Scope("prototype")
+public Motor motor() {
+    return new Motor("1.5 Turbo", 173, 4, 1.5, TipoMotor.TURBO);
+}
+
+// or using the constant (preferred — no magic strings)
+@Bean
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public Motor motor() { ... }
+```
+
+### Core scopes
+
+| Scope | Annotation / value | Instances | Lifetime | Typical use |
+|---|---|---|---|---|
+| **Singleton** | `@Scope("singleton")` or omit | **1 per container** | Application lifetime | Services, repositories, controllers — stateless shared objects |
+| **Prototype** | `@Scope("prototype")` | **New instance per injection** | Until GC | Stateful objects that must not be shared (e.g. command objects) |
+
+### Web-only scopes (require a web-aware ApplicationContext)
+
+| Scope | Value | Instances | Lifetime |
+|---|---|---|---|
+| **Request** | `@RequestScope` / `"request"` | 1 per HTTP request | Discarded after response |
+| **Session** | `@SessionScope` / `"session"` | 1 per HTTP session | Discarded when session expires |
+| **Application** | `@ApplicationScope` / `"application"` | 1 per ServletContext | Same as singleton but bound to ServletContext |
+
+```java
+@Component
+@RequestScope          // fresh instance for every incoming HTTP request
+public class CartContext {
+    private List<Item> items = new ArrayList<>();
+    // safe to store per-request state here
+}
+```
+
+### Singleton vs Prototype — practical difference
+
+```java
+// Singleton: Spring returns the SAME instance every time
+@Bean
+public MotorService motorService() { return new MotorService(); }
+
+// Somewhere in the app:
+MotorService a = context.getBean(MotorService.class);
+MotorService b = context.getBean(MotorService.class);
+// a == b → true, same object
+
+// Prototype: Spring creates a NEW instance every time
+@Bean
+@Scope("prototype")
+public MotorBuilder motorBuilder() { return new MotorBuilder(); }
+
+MotorBuilder x = context.getBean(MotorBuilder.class);
+MotorBuilder y = context.getBean(MotorBuilder.class);
+// x == y → false, different objects
+```
+
+### Key rules about scopes
+
+- **Singleton beans are stateless by design** — they are shared across all threads and requests. Never store mutable per-request state in a singleton.
+- **Prototype beans are not managed after creation** — Spring creates them but does not call `@PreDestroy` on prototype beans. Cleanup is your responsibility.
+- **Injecting a prototype into a singleton breaks prototype semantics** — the singleton is created once and receives one prototype instance, which then acts like a singleton. To fix this, use `ApplicationContext.getBean()` or `ObjectProvider<T>` to look up a fresh prototype on each use.
+
+```java
+// Wrong: prototype injected into singleton → only one instance ever created
+@Service
+public class OrderService {
+    @Autowired
+    private PrototypeCart cart;  // always the same cart!
+}
+
+// Correct: use ObjectProvider to get a fresh instance each time
+@Service
+public class OrderService {
+    @Autowired
+    private ObjectProvider<PrototypeCart> cartProvider;
+
+    public void processOrder() {
+        PrototypeCart cart = cartProvider.getObject(); // new instance every call
+    }
+}
+```
+
+---
+
 ## Arquitetura Spring MVC
 
 ```mermaid

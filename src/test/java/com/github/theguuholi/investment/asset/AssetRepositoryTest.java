@@ -85,6 +85,7 @@ class AssetRepositoryTest {
         var user = new User();
         user.setName("Test User");
         user.setEmail(userEmail);
+        user.setPassword("hashed-password");
         var savedUser = userRepository.save(user);
 
         var portfolio = new Portfolio();

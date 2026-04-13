@@ -192,8 +192,13 @@
 						<goals><goal>prepare-agent</goal></goals>
 						<configuration>
 							<includes>
-								<include>com/github/theguuholi/**</include>
+								<include>com/github/theguuholi/investment/**</include>
 							</includes>
+							<excludes>
+								<exclude>*$MockitoMock*</exclude>
+								<exclude>*$HibernateProxy*</exclude>
+								<exclude>*$HibernateInstantiator*</exclude>
+							</excludes>
 						</configuration>
 					</execution>
 					<execution>

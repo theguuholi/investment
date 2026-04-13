@@ -74,6 +74,7 @@ class PortfolioRepositoryTest {
         var user = new User();
         user.setName(name);
         user.setEmail(email);
+        user.setPassword("hashed-password");
         return userRepository.save(user);
     }
 
