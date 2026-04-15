@@ -1,0 +1,42 @@
+@baseUrl = http://localhost:8080
+@token = {{login.response.body.token}}
+
+### Login (run this first to get the token)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "secret123"
+}
+
+###
+
+### Create portfolio
+POST {{baseUrl}}/portfolios
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": "{{userId}}",
+  "name": "My Growth Portfolio"
+}
+
+###
+
+### List portfolios by user
+GET {{baseUrl}}/portfolios/user/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Get portfolio by ID
+GET {{baseUrl}}/portfolios/{{portfolioId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Delete portfolio
+DELETE {{baseUrl}}/portfolios/{{portfolioId}}
+Authorization: Bearer {{token}}

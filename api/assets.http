@@ -1,0 +1,45 @@
+@baseUrl = http://localhost:8080
+@token = {{login.response.body.token}}
+
+### Login (run this first to get the token)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "secret123"
+}
+
+###
+
+### Create asset
+POST {{baseUrl}}/assets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "portfolioId": "{{portfolioId}}",
+  "symbol": "AAPL",
+  "name": "Apple Inc.",
+  "quantity": 10,
+  "purchasePrice": 175.50
+}
+
+###
+
+### List assets by portfolio
+GET {{baseUrl}}/assets/portfolio/{{portfolioId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Get asset by ID
+GET {{baseUrl}}/assets/{{assetId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Delete asset
+DELETE {{baseUrl}}/assets/{{assetId}}
+Authorization: Bearer {{token}}

@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test & Quality
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: investment_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build, test and generate JaCoCo report
+        run: mvn verify --no-transfer-progress
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/investment_db
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+          JWT_SECRET: ci-secret-key-that-is-long-enough-for-hs256
+
+      - name: SonarCloud analysis
+        if: github.ref == 'refs/heads/master' && secrets.SONAR_TOKEN != ''
+        run: mvn sonar:sonar --no-transfer-progress
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+          JWT_SECRET: ci-secret-key-that-is-long-enough-for-hs256
