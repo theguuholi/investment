@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.theguuholi.investment.portfolio.PortfolioService;
 import com.github.theguuholi.investment.portfolio.api.PortfolioController;
 import com.github.theguuholi.investment.portfolio.api.PortfolioRequest;
+import com.github.theguuholi.investment.portfolio.Portfolio;
 import com.github.theguuholi.investment.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
